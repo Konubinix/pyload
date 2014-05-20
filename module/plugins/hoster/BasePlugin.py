@@ -7,7 +7,7 @@ from urllib import unquote
 from module.network.HTTPRequest import BadHeader
 from module.plugins.Hoster import Hoster
 from module.utils import html_unescape, remove_chars
-
+import netrc
 
 class BasePlugin(Hoster):
     __name__ = "BasePlugin"
@@ -53,9 +53,14 @@ class BasePlugin(Hoster):
                     servers = [x['login'] for x in account.getAllAccounts()]
                     server = urlparse(pyfile.url).netloc
 
+                    net = netrc.netrc()
+                    authentication = net.authenticators(server)
                     if server in servers:
                         self.logDebug("Logging on to %s" % server)
                         self.req.addAuth(account.accounts[server]["password"])
+                    elif authentication:
+                        (login, account, password) = authentication
+                        self.req.addAuth("%s:%s" % (login, password))
                     else:
                         for pwd in pyfile.package().password.splitlines():
                             if ":" in pwd:
